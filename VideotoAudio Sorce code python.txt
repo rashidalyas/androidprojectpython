@@ -1,0 +1,75 @@
+from threading import Thread
+from moviepy.editor import VideoFileClip
+from tkinter.filedialog import askopenfilename
+from kivymd.uix.relativelayout import MDRelativeLayout
+from kivymd.app import MDApp
+from kivy.uix.label import Label
+from kivy.uix.image import Image
+from kivy.uix.button import Button
+from kivy.core.window import Window
+
+Window.size = (500, 600)
+
+class MyApp(MDApp):
+
+    def filechooser(self, event):
+        self.file = askopenfilename(filetypes=[("mp4 file", '*.mp4')])
+        if self.file:
+            self.mp4_file = self.file
+            self.mp3_file = self.mp4_file.replace(".mp4", ".mp3")
+            self.locationLabel.text = self.mp4_file
+            self.convertButton.pos_hint = {'center_x': 0.5, 'center_y': .35}
+
+    def writeaudio(self):
+        self.video = VideoFileClip(self.mp4_file)
+        self.audio = self.video.audio
+
+        try:
+            self.audio.write_audiofile(self.mp3_file)
+            print('Completed Successfully')
+            self.successLabel.text = "Successfully converted"
+        except Exception as e:
+            print(f"Error writing Audio: {e}. Please try again.")
+        finally:
+            self.audio.close()
+            self.video.close()
+
+    def writeaudioThread(self, event):
+        thread1 = Thread(target=self.writeaudio)
+        thread1.start()
+
+    def build(self):
+        layout = MDRelativeLayout(md_bg_color=[248 / 255, 200 / 255, 220 / 255])
+
+        self.img = Image(source='mp33.png', size_hint=(.5, .5),
+                         pos_hint={'center_x': 0.5, 'center_y': .85})
+
+        self.filechooserLabel = Label(text="Please select the video to convert",
+                                      pos_hint={'center_x': 0.5, 'center_y': .60},
+                                      size_hint=(1, 1), font_size=20, color=(1, 0, 0))
+
+        self.select_button = Button(text="Select", size_hint=(None, None), pos=(375, 340),
+                                    height=40, on_press=self.filechooser)
+
+        self.locationLabel = Label(text="", pos_hint={'center_x': .5, 'center_y': .45},
+                                   size_hint=(1, 1), font_size=20, color=(1, 0, 0))
+
+        self.convertButton = Button(text="Convert", pos_hint={'center_x': 0.5, 'center_y': .35},
+                                    size_hint=(.2, .1), size=(75, 75), font_name="Comic",
+                                    bold=True, font_size=24, background_color=(0, 1, 0),
+                                    on_press=self.writeaudioThread)
+
+        self.successLabel = Label(text="", pos_hint={'center_x': .5, 'center_y': .20},
+                                  size_hint=(1, 1), font_size=20, color=(1, 0, 0))
+
+        layout.add_widget(self.img)
+        layout.add_widget(self.filechooserLabel)
+        layout.add_widget(self.select_button)
+        layout.add_widget(self.locationLabel)
+        layout.add_widget(self.convertButton)
+        layout.add_widget(self.successLabel)
+
+        return layout
+
+if __name__ == "__main__":
+    MyApp().run()
